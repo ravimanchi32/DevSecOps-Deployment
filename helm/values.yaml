@@ -1,0 +1,23 @@
+replicaCount: 2
+
+image:
+  repository: nginx    # <<< change this
+  tag: "latest"                    # <<< change tag
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer               # Creates AWS ELB
+  port: 80
+
+containerPort: 80
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+ingress:
+  enabled: false
