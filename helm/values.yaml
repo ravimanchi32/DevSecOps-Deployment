@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: ravikumarmanchi/devops:latest   # <<< change this
+  repository: ravikumarmanchi/devops   # <<< change this
   tag: "latest"                    # <<< change tag
   pullPolicy: IfNotPresent
 
