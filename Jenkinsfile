@@ -17,14 +17,12 @@ pipeline {
         stage('Configure AWS Credentials') {
             steps {
                 withCredentials([
-                    usernamePassword(
-                        credentialsId: 'AWS_ACCESS_KEY_ID',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
                     mkdir -p ~/.aws
+
                     cat > ~/.aws/credentials <<EOF
 [default]
 aws_access_key_id=${AWS_ACCESS_KEY_ID}
@@ -67,18 +65,18 @@ EOF
         stage('Fetch EKS Cluster Info') {
             steps {
                 script {
-                    CLUSTER_NAME = sh(
+                    env.CLUSTER_NAME = sh(
                         script: "terraform -chdir=${TF_WORKDIR} output -raw cluster_name",
                         returnStdout: true
                     ).trim()
 
-                    VPC_ID = sh(
+                    env.VPC_ID = sh(
                         script: "terraform -chdir=${TF_WORKDIR} output -raw vpc_id",
                         returnStdout: true
                     ).trim()
 
-                    echo "Cluster Name: ${CLUSTER_NAME}"
-                    echo "VPC ID: ${VPC_ID}"
+                    echo "Cluster Name: ${env.CLUSTER_NAME}"
+                    echo "VPC ID: ${env.VPC_ID}"
                 }
             }
         }
