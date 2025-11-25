@@ -62,9 +62,6 @@ EOF
         }
 
         stage('Terraform Apply') {
-            when {
-                expression { return params.DESTROY_INFRA == false }
-            }
             steps {
                 dir("${TF_WORKDIR}") {
                     sh 'terraform apply -auto-approve tfplan'
@@ -73,9 +70,6 @@ EOF
         }
 
         stage('Fetch EKS Cluster Name') {
-            when {
-                expression { return params.DESTROY_INFRA == false }
-            }
             steps {
                 script {
                     env.CLUSTER_NAME = sh(
@@ -87,9 +81,6 @@ EOF
         }
 
         stage('Update Kubeconfig') {
-            when {
-                expression { return params.DESTROY_INFRA == false }
-            }
             steps {
                 sh """
                 aws eks update-kubeconfig \
@@ -99,56 +90,47 @@ EOF
             }
         }
 
-        stage('Kubernetes Status') {
-            when {
-                expression { return params.DESTROY_INFRA == false }
-            }
-            steps {
-                sh """
-                kubectl get nodes
-                kubectl get pods -A
-                kubectl get svc -A
-                """
-            }
-        }
+        // stage('Kubernetes Status') {
+        //     steps {
+        //         sh """
+        //         kubectl get nodes
+        //         """
+        //     }
+        // }
 
-        stage('Deploy Application') {
-            when {
-                expression { return params.DESTROY_INFRA == false }
-            }
-            steps {
-                sh """
-                helm upgrade --install custom-app ./helm --force
-                """
-            }
-        }
+        // stage('Deploy Application') {
+        //     steps {
+        //         sh """
+        //         helm upgrade --install custom-app ./helm --force
+        //         """
+        //     }
+        // }
 
-        stage('Deploy Prometheus & Grafana') {
-            when {
-                expression { return params.DESTROY_INFRA == false }
-            }
-            steps {
-                sh """
-                helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-                helm repo update
+        // stage('Deploy Prometheus & Grafana') {
+        //     steps {
+        //         sh """
+        //         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        //         helm repo update
 
-                helm upgrade --install prom-stack prometheus-community/kube-prometheus-stack \
-                    -n monitoring --create-namespace \
-                    -f helm/prom-values.yaml
-                """
-            }
-        }
+        //         helm upgrade --install prom-stack prometheus-community/kube-prometheus-stack \
+        //             -n monitoring --create-namespace \
+        //             -f helm/prom-values.yaml
+        //         """
+        //     }
+        // }
 
-        stage('Show Monitoring Services') {
-            when {
-                expression { return params.DESTROY_INFRA == false }
-            }
-            steps {
-                sh "kubectl get svc -n monitoring"
-            }
-        }
+        // stage('Show Monitoring Services') {
+        //     steps {
+        //         sh """
+        //         kubectl get svc -n monitoring
+        //         kubectl get pods -A
+        //         kubectl get svc -A
+        //         """
+        //     }
+        // }
 
-        stage("Terraform Destroy (Optional)") {
+        /* --------------------- ONLY THIS STAGE USES DESTROY FLAG ---------------------- */
+        stage("Terraform Destroy") {
             when {
                 expression { return params.DESTROY_INFRA == true }
             }
@@ -160,15 +142,15 @@ EOF
         }
     }
 
-    post {
-        always {
-            echo "Pipeline completed."
-        }
-        failure {
-            echo "Pipeline failed ❌"
-        }
-        success {
-            echo "Pipeline succeeded ✅"
-        }
-    }
+    // post {
+    //     always {
+    //         echo "Pipeline completed."
+    //     }
+    //     failure {
+    //         echo "Pipeline failed ❌"
+    //     }
+    //     success {
+    //         echo "Pipeline succeeded ✅"
+    //     }
+    // }
 }
