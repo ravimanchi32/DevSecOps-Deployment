@@ -120,8 +120,8 @@ EOF
                 script {
                     def clusterExists = sh(
                         script: """
-                        aws eks describe-cluster \
-                            --name $(terraform -chdir=${TF_WORKDIR} output -raw cluster_name) \
+                        aws eks describe-cluster \\
+                            --name \\$(terraform -chdir=${TF_WORKDIR} output -raw cluster_name) \\
                             --region ${AWS_REGION} >/dev/null 2>&1
                         """,
                         returnStatus: true
@@ -141,41 +141,41 @@ EOF
 
         stage("Update kubeconfig") {
             steps {
-                sh '''
-                CLUSTER_NAME=$(terraform -chdir=${TF_WORKDIR} output -raw cluster_name)
+                sh """
+                CLUSTER_NAME=\\$(terraform -chdir=${TF_WORKDIR} output -raw cluster_name)
 
-                aws eks update-kubeconfig \
-                    --name $CLUSTER_NAME \
-                    --region ${AWS_REGION} \
+                aws eks update-kubeconfig \\
+                    --name \$CLUSTER_NAME \\
+                    --region ${AWS_REGION} \\
                     --kubeconfig ${KUBECONFIG}
 
                 echo "Kubeconfig created at ${KUBECONFIG}"
-                '''
+                """
             }
         }
 
         stage("Deploy Helm Chart") {
             steps {
-                sh '''
+                sh """
                 helm lint ${CHART_PATH}
 
                 echo "Dry run Helm upgrade/install..."
-                helm upgrade --install ${CHART_NAME} ${CHART_PATH} \
+                helm upgrade --install ${CHART_NAME} ${CHART_PATH} \\
                     --kubeconfig ${KUBECONFIG} --dry-run --debug
 
                 echo "Deploying Helm Chart..."
-                helm upgrade --install ${CHART_NAME} ${CHART_PATH} \
+                helm upgrade --install ${CHART_NAME} ${CHART_PATH} \\
                     --kubeconfig ${KUBECONFIG}
-                '''
+                """
             }
         }
 
         stage("Verify Deployment") {
             steps {
-                sh '''
+                sh """
                 kubectl --kubeconfig=${KUBECONFIG} get nodes
                 kubectl --kubeconfig=${KUBECONFIG} get pods -A
-                '''
+                """
             }
         }
 
