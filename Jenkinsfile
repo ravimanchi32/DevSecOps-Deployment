@@ -118,12 +118,15 @@ EOF
         stage('Terraform Apply (Run Once)') {
             steps {
                 script {
+                    // Get cluster name from Terraform output
+                    def clusterName = sh(
+                        script: "terraform -chdir=${TF_WORKDIR} output -raw cluster_name",
+                        returnStdout: true
+                    ).trim()
+
+                    // Check if cluster exists
                     def clusterExists = sh(
-                        script: """
-                        aws eks describe-cluster \\
-                            --name \\$(terraform -chdir=${TF_WORKDIR} output -raw cluster_name) \\
-                            --region ${AWS_REGION} >/dev/null 2>&1
-                        """,
+                        script: "aws eks describe-cluster --name ${clusterName} --region ${AWS_REGION} >/dev/null 2>&1",
                         returnStatus: true
                     )
 
@@ -141,16 +144,17 @@ EOF
 
         stage("Update kubeconfig") {
             steps {
-                sh """
-                CLUSTER_NAME=\\$(terraform -chdir=${TF_WORKDIR} output -raw cluster_name)
+                script {
+                    def clusterName = sh(
+                        script: "terraform -chdir=${TF_WORKDIR} output -raw cluster_name",
+                        returnStdout: true
+                    ).trim()
 
-                aws eks update-kubeconfig \\
-                    --name \$CLUSTER_NAME \\
-                    --region ${AWS_REGION} \\
-                    --kubeconfig ${KUBECONFIG}
-
-                echo "Kubeconfig created at ${KUBECONFIG}"
-                """
+                    sh """
+                    aws eks update-kubeconfig --name ${clusterName} --region ${AWS_REGION} --kubeconfig ${KUBECONFIG}
+                    echo "Kubeconfig created at ${KUBECONFIG}"
+                    """
+                }
             }
         }
 
