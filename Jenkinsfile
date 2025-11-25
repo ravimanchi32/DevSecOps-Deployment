@@ -62,21 +62,13 @@ EOF
             }
         }
 
-        stage('Fetch EKS Cluster Info') {
+        stage('Fetch EKS Cluster Name') {
             steps {
                 script {
                     env.CLUSTER_NAME = sh(
                         script: "terraform -chdir=${TF_WORKDIR} output -raw cluster_name",
                         returnStdout: true
                     ).trim()
-
-                    env.VPC_ID = sh(
-                        script: "terraform -chdir=${TF_WORKDIR} output -raw vpc_id",
-                        returnStdout: true
-                    ).trim()
-
-                    echo "Cluster Name: ${env.CLUSTER_NAME}"
-                    echo "VPC ID: ${env.VPC_ID}"
                 }
             }
         }
@@ -85,8 +77,18 @@ EOF
             steps {
                 sh """
                 aws eks update-kubeconfig \
-                  --region ${AWS_REGION} \
-                  --name ${CLUSTER_NAME}
+                    --region ${AWS_REGION} \
+                    --name ${CLUSTER_NAME}
+                """
+            }
+        }
+
+        stage('Kubernetes Status') {
+            steps {
+                sh """
+                kubectl get nodes
+                kubectl get pods -A
+                kubectl get svc -A
                 """
             }
         }
@@ -94,7 +96,7 @@ EOF
         stage('Helm Deploy NGINX') {
             steps {
                 sh """
-                helm upgrade --install my-nginx ./helm/nginx-helm
+                helm upgrade --install my-nginx ./helm
                 """
             }
         }
