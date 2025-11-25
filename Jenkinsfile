@@ -16,63 +16,63 @@ pipeline {
 
     stages {
 
-        stage("Setup Tools (Run Once)") {
-            steps {
-                sh '''
-                mkdir -p $HOME/bin
+        // stage("Setup Tools (Run Once)") {
+        //     steps {
+        //         sh '''
+        //         mkdir -p $HOME/bin
 
-                # --------------------
-                # AWS CLI
-                # --------------------
-                if ! command -v aws >/dev/null 2>&1; then
-                    echo "Installing AWS CLI..."
-                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                    unzip -o awscliv2.zip
-                    ./aws/install -i $HOME/aws-cli -b $HOME/bin
-                else
-                    echo "AWS CLI already installed."
-                fi
-                aws --version
+        //         # --------------------
+        //         # AWS CLI
+        //         # --------------------
+        //         if ! command -v aws >/dev/null 2>&1; then
+        //             echo "Installing AWS CLI..."
+        //             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        //             unzip -o awscliv2.zip
+        //             ./aws/install -i $HOME/aws-cli -b $HOME/bin
+        //         else
+        //             echo "AWS CLI already installed."
+        //         fi
+        //         aws --version
 
-                # --------------------
-                # kubectl
-                # --------------------
-                if ! command -v kubectl >/dev/null 2>&1; then
-                    echo "Installing kubectl..."
-                    curl -Lo $HOME/bin/kubectl \
-                        https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl
-                    chmod +x $HOME/bin/kubectl
-                else
-                    echo "kubectl already installed."
-                fi
-                kubectl version --client --short
+        //         # --------------------
+        //         # kubectl
+        //         # --------------------
+        //         if ! command -v kubectl >/dev/null 2>&1; then
+        //             echo "Installing kubectl..."
+        //             curl -Lo $HOME/bin/kubectl \
+        //                 https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.6/2022-03-09/bin/linux/amd64/kubectl
+        //             chmod +x $HOME/bin/kubectl
+        //         else
+        //             echo "kubectl already installed."
+        //         fi
+        //         kubectl version --client --short
 
-                # --------------------
-                # Terraform
-                # --------------------
-                if ! command -v terraform >/dev/null 2>&1; then
-                    echo "Installing Terraform..."
-                    curl -LO https://releases.hashicorp.com/terraform/1.9.0/terraform_1.9.0_linux_amd64.zip
-                    unzip -o terraform_1.9.0_linux_amd64.zip
-                    mv terraform $HOME/bin/
-                else
-                    echo "Terraform already installed."
-                fi
-                terraform -version
+        //         # --------------------
+        //         # Terraform
+        //         # --------------------
+        //         if ! command -v terraform >/dev/null 2>&1; then
+        //             echo "Installing Terraform..."
+        //             curl -LO https://releases.hashicorp.com/terraform/1.9.0/terraform_1.9.0_linux_amd64.zip
+        //             unzip -o terraform_1.9.0_linux_amd64.zip
+        //             mv terraform $HOME/bin/
+        //         else
+        //             echo "Terraform already installed."
+        //         fi
+        //         terraform -version
 
-                # --------------------
-                # Helm
-                # --------------------
-                if ! command -v helm >/dev/null 2>&1; then
-                    echo "Installing Helm..."
-                    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-                else
-                    echo "Helm already installed."
-                fi
-                helm version
-                '''
-            }
-        }
+        //         # --------------------
+        //         # Helm
+        //         # --------------------
+        //         if ! command -v helm >/dev/null 2>&1; then
+        //             echo "Installing Helm..."
+        //             curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        //         else
+        //             echo "Helm already installed."
+        //         fi
+        //         helm version
+        //         '''
+        //     }
+        // }
 
         stage("Checkout Code") {
             steps {
