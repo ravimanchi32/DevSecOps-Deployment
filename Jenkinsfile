@@ -132,13 +132,13 @@ EOF
         }
         success {
             echo "Pipeline succeeded ✅"
-        }        stage('Terraform Apply') {
+        }          
+    }
+     stage('Terraform Apply') {
             steps {
                 dir("${TF_WORKDIR}") {
                     sh 'terraform destroy -auto-approve tfplan'
                 }
             }
         }
-        
-    }
 }
