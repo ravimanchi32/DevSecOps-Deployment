@@ -62,119 +62,102 @@ pipeline {
             }
         }
 
-        /* ----------------------------------------------
-                AWS CREDENTIALS BLOCK (ONE TIME)
-           ---------------------------------------------- */
-        stage("Terraform & AWS Operations") {
+        stage("Configure AWS Credentials") {
             environment {
                 AWS_SHARED_CREDENTIALS_FILE = "$WORKSPACE/.aws/credentials"
             }
-            stages {
-
-                stage("Configure AWS Credentials") {
-                    steps {
-                        withCredentials([
-                            string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
-                            string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
-                        ]) {
-
-                            sh '''
-                            mkdir -p $WORKSPACE/.aws
-
-                            cat > $WORKSPACE/.aws/credentials <<EOF
+            steps {
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                    mkdir -p $WORKSPACE/.aws
+                    cat > $WORKSPACE/.aws/credentials <<EOF
 [default]
 aws_access_key_id=${AWS_ACCESS_KEY_ID}
 aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}
 region=${AWS_REGION}
 EOF
-
-                            echo "AWS credentials configured once."
-                            '''
-                        }
-                    }
+                    echo "AWS credentials configured."
+                    '''
                 }
+            }
+        }
 
-                stage('Terraform Init') {
-                    steps {
+        stage('Terraform Init') {
+            steps {
+                dir("${TF_WORKDIR}") {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir("${TF_WORKDIR}") {
+                    sh 'terraform plan -out=tfplan'
+                }
+            }
+        }
+
+        stage('Terraform Apply (Run Once)') {
+            steps {
+                script {
+                    // Get cluster name from terraform output
+                    def clusterName = sh(
+                        script: "terraform -chdir=${TF_WORKDIR} output -raw cluster_name",
+                        returnStdout: true
+                    ).trim()
+
+                    // Check if cluster exists
+                    def clusterExists = sh(
+                        script: "aws eks describe-cluster --name ${clusterName} --region ${AWS_REGION} >/dev/null 2>&1",
+                        returnStatus: true
+                    )
+
+                    if (clusterExists == 0) {
+                        echo "Cluster exists → Skipping terraform apply."
+                    } else {
+                        echo "Cluster NOT found → Running terraform apply..."
                         dir("${TF_WORKDIR}") {
-                            sh 'terraform init'
+                            sh 'terraform apply -auto-approve tfplan'
                         }
-                    }
-                }
-
-                stage('Terraform Plan') {
-                    steps {
-                        dir("${TF_WORKDIR}") {
-                            sh 'terraform plan -out=tfplan'
-                        }
-                    }
-                }
-
-                stage('Terraform Apply (Run Once)') {
-                    steps {
-                        script {
-                            def clusterExists = sh(
-                                script: """
-                                aws eks describe-cluster \
-                                    --name $(terraform -chdir=${TF_WORKDIR} output -raw cluster_name) \
-                                    --region ${AWS_REGION} >/dev/null 2>&1
-                                """,
-                                returnStatus: true
-                            )
-
-                            if (clusterExists == 0) {
-                                echo "Cluster exists → Skipping terraform apply."
-                            } else {
-                                echo "Cluster NOT found → Running terraform apply..."
-                                dir("${TF_WORKDIR}") {
-                                    sh 'terraform apply -auto-approve tfplan'
-                                }
-                            }
-                        }
-                    }
-                }
-
-                stage("Update kubeconfig") {
-                    steps {
-                        sh '''
-                        CLUSTER_NAME=$(terraform -chdir=${TF_WORKDIR} output -raw cluster_name)
-
-                        aws eks update-kubeconfig \
-                            --name $CLUSTER_NAME \
-                            --region ${AWS_REGION} \
-                            --kubeconfig ${KUBECONFIG}
-
-                        echo "Kubeconfig created at ${KUBECONFIG}"
-                        '''
                     }
                 }
             }
         }
 
-        /* -----------------------------
-               HELM DEPLOYMENT
-           ----------------------------- */
+        stage("Update kubeconfig") {
+            steps {
+                script {
+                    def clusterName = sh(
+                        script: "terraform -chdir=${TF_WORKDIR} output -raw cluster_name",
+                        returnStdout: true
+                    ).trim()
+
+                    sh """
+                    aws eks update-kubeconfig \
+                        --name ${clusterName} \
+                        --region ${AWS_REGION} \
+                        --kubeconfig ${KUBECONFIG}
+                    echo "Kubeconfig created at ${KUBECONFIG}"
+                    """
+                }
+            }
+        }
+
         stage("Deploy Helm Chart") {
             steps {
                 sh '''
-                echo "Checking Helm..."
                 if ! command -v helm >/dev/null 2>&1; then
                     curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
                 fi
 
-                echo "Helm Version:"
                 helm version
-
-                echo "Helm Lint..."
                 helm lint ${CHART_PATH}
-
-                echo "Dry Run..."
-                helm upgrade --install ${CHART_NAME} ${CHART_PATH} \
-                    --kubeconfig ${KUBECONFIG} --dry-run --debug
-
-                echo "Deploying Chart..."
-                helm upgrade --install ${CHART_NAME} ${CHART_PATH} \
-                    --kubeconfig ${KUBECONFIG}
+                helm upgrade --install ${CHART_NAME} ${CHART_PATH} --kubeconfig ${KUBECONFIG} --dry-run --debug
+                helm upgrade --install ${CHART_NAME} ${CHART_PATH} --kubeconfig ${KUBECONFIG}
                 '''
             }
         }
@@ -188,9 +171,6 @@ EOF
             }
         }
 
-        /* ----------------------------------------------
-               OPTIONAL TERRAFORM DESTROY
-           ---------------------------------------------- */
         stage("Terraform Destroy (Optional)") {
             when {
                 expression { return params.DESTROY_INFRA == true }
@@ -201,7 +181,6 @@ EOF
                 }
             }
         }
-
     }
 
     post {
