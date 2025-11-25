@@ -21,15 +21,15 @@ pipeline {
                     string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                    mkdir -p ~/.aws
+                        mkdir -p ~/.aws
 
-                    cat > ~/.aws/credentials <<EOF
+                        cat > ~/.aws/credentials <<EOF
 [default]
 aws_access_key_id=${AWS_ACCESS_KEY_ID}
 aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}
 EOF
 
-                    cat > ~/.aws/config <<EOF
+                        cat > ~/.aws/config <<EOF
 [default]
 region=${AWS_REGION}
 EOF
@@ -116,9 +116,21 @@ EOF
 
         stage('Show Monitoring Services') {
             steps {
-                sh """
-                kubectl get svc -n monitoring
-                """
+                sh "kubectl get svc -n monitoring"
+            }
+        }
+
+        // ---- OPTIONAL DESTROY STAGE ----
+        stage('Terraform Destroy') {
+            when {
+                expression {
+                    return params.DESTROY_RESOURCES == true
+                }
+            }
+            steps {
+                dir("${TF_WORKDIR}") {
+                    sh "terraform destroy -auto-approve"
+                }
             }
         }
     }
@@ -132,13 +144,6 @@ EOF
         }
         success {
             echo "Pipeline succeeded ✅"
-        }          
-    }
-     stage('Terraform Apply') {
-            steps {
-                dir("${TF_WORKDIR}") {
-                    sh 'terraform destroy -auto-approve tfplan'
-                }
-            }
         }
+    }
 }
