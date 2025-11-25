@@ -1,24 +1,30 @@
 variable "region" {
-  default = "ap-south-1"
+  description = "AWS region"
+  default     = "ap-south-1"
 }
 
 variable "cluster_name" {
-  default = "my-eks-cluster"
+  description = "EKS Cluster Name"
+  default     = "my-eks-cluster"
 }
 
 variable "node_group_instance" {
-  default = "t3.medium"
+  description = "EC2 instance type for EKS Worker Nodes"
+  # Cheapest possible instance supported by EKS
+  default     = "t3.small"
 }
 
 variable "desired_size" {
-  default = 2
+  description = "Number of desired nodes"
+  default     = 1
 }
 
 variable "min_size" {
-  default = 1
+  description = "Minimum number of nodes"
+  default     = 1
 }
 
 variable "max_size" {
-  default = 3
+  description = "Maximum number of nodes"
+  default     = 2
 }
-
