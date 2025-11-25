@@ -93,20 +93,31 @@ EOF
             }
         }
 
-        stage('Helm Deploy Application') {
+        stage('Deploy Application') {
             steps {
                 sh """
-                helm upgrade --install my-nginx ./helm
+                helm upgrade --install custom-app ./helm
                 """
             }
         }
 
-        stage('Install Monitoring (Prometheus + Grafana)') {
+        stage('Deploy Prometheus & Grafana') {
             steps {
                 sh """
                 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
                 helm repo update
-                helm upgrade --install prom-stack prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
+
+                helm upgrade --install prom-stack prometheus-community/kube-prometheus-stack \
+                    -n monitoring --create-namespace \
+                    -f helm/prom-values.yaml
+                """
+            }
+        }
+
+        stage('Show Monitoring Services') {
+            steps {
+                sh """
+                kubectl get svc -n monitoring
                 """
             }
         }
