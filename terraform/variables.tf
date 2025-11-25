@@ -11,20 +11,20 @@ variable "cluster_name" {
 variable "node_group_instance" {
   description = "EC2 instance type for EKS Worker Nodes"
   # Cheapest possible instance supported by EKS
-  default     = "t3.large"
+  default     = "t3.small"
 }
 
 variable "desired_size" {
   description = "Number of desired nodes"
-  default     = 1
+  default     = 2
 }
 
 variable "min_size" {
   description = "Minimum number of nodes"
-  default     = 1
+  default     = 2
 }
 
 variable "max_size" {
   description = "Maximum number of nodes"
-  default     = 2
+  default     = 3
 }
