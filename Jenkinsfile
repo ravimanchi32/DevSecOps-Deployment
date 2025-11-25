@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(
+            name: 'DESTROY_INFRA',
+            defaultValue: false,
+            description: 'Run terraform destroy after the pipeline?'
+        )
+    }
+
     environment {
         TF_WORKDIR = "terraform"
         AWS_REGION = "ap-south-1"
@@ -21,15 +29,14 @@ pipeline {
                     string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh '''
-                        mkdir -p ~/.aws
-
-                        cat > ~/.aws/credentials <<EOF
+                    mkdir -p ~/.aws
+                    cat > ~/.aws/credentials <<EOF
 [default]
 aws_access_key_id=${AWS_ACCESS_KEY_ID}
 aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}
 EOF
 
-                        cat > ~/.aws/config <<EOF
+                    cat > ~/.aws/config <<EOF
 [default]
 region=${AWS_REGION}
 EOF
@@ -55,6 +62,9 @@ EOF
         }
 
         stage('Terraform Apply') {
+            when {
+                expression { return params.DESTROY_INFRA == false }
+            }
             steps {
                 dir("${TF_WORKDIR}") {
                     sh 'terraform apply -auto-approve tfplan'
@@ -63,6 +73,9 @@ EOF
         }
 
         stage('Fetch EKS Cluster Name') {
+            when {
+                expression { return params.DESTROY_INFRA == false }
+            }
             steps {
                 script {
                     env.CLUSTER_NAME = sh(
@@ -74,6 +87,9 @@ EOF
         }
 
         stage('Update Kubeconfig') {
+            when {
+                expression { return params.DESTROY_INFRA == false }
+            }
             steps {
                 sh """
                 aws eks update-kubeconfig \
@@ -84,6 +100,9 @@ EOF
         }
 
         stage('Kubernetes Status') {
+            when {
+                expression { return params.DESTROY_INFRA == false }
+            }
             steps {
                 sh """
                 kubectl get nodes
@@ -94,14 +113,20 @@ EOF
         }
 
         stage('Deploy Application') {
+            when {
+                expression { return params.DESTROY_INFRA == false }
+            }
             steps {
                 sh """
-                helm upgrade --install custom-app ./helm
+                helm upgrade --install custom-app ./helm --force
                 """
             }
         }
 
         stage('Deploy Prometheus & Grafana') {
+            when {
+                expression { return params.DESTROY_INFRA == false }
+            }
             steps {
                 sh """
                 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -115,21 +140,21 @@ EOF
         }
 
         stage('Show Monitoring Services') {
+            when {
+                expression { return params.DESTROY_INFRA == false }
+            }
             steps {
                 sh "kubectl get svc -n monitoring"
             }
         }
 
-        // ---- OPTIONAL DESTROY STAGE ----
-        stage('Terraform Destroy') {
+        stage("Terraform Destroy (Optional)") {
             when {
-                expression {
-                    return params.DESTROY_RESOURCES == true
-                }
+                expression { return params.DESTROY_INFRA == true }
             }
             steps {
                 dir("${TF_WORKDIR}") {
-                    sh "terraform destroy -auto-approve"
+                    sh 'terraform destroy -auto-approve'
                 }
             }
         }
