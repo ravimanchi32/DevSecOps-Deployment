@@ -1,0 +1,15 @@
+grafana:
+  service:
+    type: LoadBalancer
+    port: 80
+
+  adminUser: admin
+  adminPassword: admin123
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+alertmanager:
+  alertmanagerSpec:
+    replicas: 1
