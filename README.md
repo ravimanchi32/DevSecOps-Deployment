@@ -1,4 +1,4 @@
-#Jenkins & AWS Credentials Setup Guide
+### Jenkins & AWS Credentials Setup Guide
 
 This guide provides the required steps to configure passwordless sudo for the Jenkins user and securely store AWS credentials inside Jenkins.
 
@@ -32,7 +32,7 @@ Jenkins Dashboard → Manage Jenkins → Manage Credentials → Global → Add C
 
 ### Add the following two credentials:
 
-# 1️⃣ AWS_ACCESS_KEY_ID
+### 1️⃣ AWS_ACCESS_KEY_ID
 
 Kind: Secret Text
 
@@ -42,7 +42,7 @@ Value:
 
 AKIAxxxxxxxxxx
 
-# 2️⃣ AWS_SECRET_ACCESS_KEY
+### 2️⃣ AWS_SECRET_ACCESS_KEY
 
 Kind: Secret Text
 
