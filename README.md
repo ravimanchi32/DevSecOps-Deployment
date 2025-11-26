@@ -38,9 +38,7 @@ Kind: Secret Text
 
 ID: AWS_ACCESS_KEY_ID
 
-Value:
-
-AKIAxxxxxxxxxx
+Value: AKIAxxxxxxxxxx
 
 ### 2️⃣ AWS_SECRET_ACCESS_KEY
 
@@ -48,9 +46,7 @@ Kind: Secret Text
 
 ID: AWS_SECRET_ACCESS_KEY
 
-Value:
-
-xxxxxxxxxxxxxxxxxxxxxxxx
+Value: xxxxxxxxxxxxxxxxxxxxxxxx
 
 
 These credentials will be used by Jenkins pipelines for AWS CLI, Terraform, EKS deployments, and other AWS operations.
