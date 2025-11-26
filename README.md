@@ -12,6 +12,7 @@ Run the following command on your Jenkins server:
 
 ```bash
 sudo visudo
+```
 
 ### ✔ Step 2 — Add Jenkins User to Passwordless Sudo
 
@@ -19,11 +20,11 @@ Add this line at the bottom of the file:
 
 ```bash
 jenkins ALL=(ALL) NOPASSWD:ALL
-
+```
 
 Save and exit.
 
-🔐 2. Add AWS Credentials in Jenkins
+### 🔐 2. Add AWS Credentials in Jenkins
 
 Navigate to:
 
@@ -31,7 +32,7 @@ Jenkins Dashboard → Manage Jenkins → Manage Credentials → Global → Add C
 
 ### Add the following two credentials:
 
-1️⃣ AWS_ACCESS_KEY_ID
+# 1️⃣ AWS_ACCESS_KEY_ID
 
 Kind: Secret Text
 
@@ -41,7 +42,7 @@ Value:
 
 AKIAxxxxxxxxxx
 
-2️⃣ AWS_SECRET_ACCESS_KEY
+# 2️⃣ AWS_SECRET_ACCESS_KEY
 
 Kind: Secret Text
 
